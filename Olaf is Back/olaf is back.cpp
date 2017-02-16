@@ -220,9 +220,10 @@ void LaneClear()
 		{
 			if (minion != nullptr && !minion->IsDead() && Player->IsValidTarget(minion, 1000))
 			{
-				lanehit = GetDistance(Player, minion);
-				if (lanehit > lanehitex)
+				auto dist = GetDistance(Player, minion);
+				if (dist > lanehitex)
 				{
+					lanehit = dist;
 					lanehitex = lanehit;
 				}
 			}
@@ -270,9 +271,10 @@ void Jungle()
 			{
 				if(Q->IsReady() && Player->IsValidTarget(minion, 500))
 				{
-					junghit = GetDistance(Player, minion);
-					if (junghit > junghitex)
+					auto dist = GetDistance(Player, minion);
+					if (dist > junghitex)
 					{
+						junghit = dist;
 						junghitex = junghit;
 					}
 				}
