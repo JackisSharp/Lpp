@@ -231,12 +231,63 @@ void Killsteal()
 		}
 
 	}
+void LaneClear()
+{
+	Vec3 position;
+	int mincount;
+	float lanehit=0;
+	float lanehitex=0;
+	float dist;
+
+	if (LaneQ->Enabled() && Player->ManaPercent() > LaneMana->GetInteger() && Q->IsReady())
+	{
+		for (auto minion : GEntityList->GetAllMinions(false, true, false))
+		{
+			if (minion != nullptr && !minion->IsDead() && Player->IsValidTarget(minion, 1000))
+			{
+				dist = GetDistance(Player, minion);
+				if (dist > lanehitex)
+				{
+					lanehitex = lanehit;
+					lanehit = dist;
+				}
+			}
+		}
+		if (lanehit > 0)
+		{
+			GPrediction->FindBestCastPosition(lanehit, 130, true, true, false, position, mincount);
+
+			if (mincount >= 2)
+			{
+				Q->CastOnPosition(position);
+			}
+		}
+
+	}
+	if (LaneE->Enabled() && E->IsReady())
+	{
+		for (auto minion : GEntityList->GetAllMinions(false, true, false))
+		{
+
+			if (minion != nullptr && !minion->IsDead() && Player->IsValidTarget(minion, E->Range()))
+			{
+				auto dmg = GDamage->GetSpellDamage(Player, minion, kSlotE);
+				if (minion->GetHealth() <= dmg)
+				{
+					E->CastOnUnit(minion);
+				}
+			}
+		}
+		
+	}
+}
 void Jungle()
 {
 	int mincount;
 	Vec3 position;
-	float junghit;
-	float junghitex;
+	float junghit=0;
+	float junghitex=0;
+	float dist = 0;
 
 	if (JungClear->Enabled()&& Player->ManaPercent() > JungMana->GetInteger())
 	{
@@ -246,13 +297,14 @@ void Jungle()
 			{
 				if(Q->IsReady() && Player->IsValidTarget(minion, 500))
 				{
-					auto dist = GetDistance(Player, minion);
+					dist = GetDistance(Player, minion);
 					if (dist > junghitex)
 					{
-						junghit = dist;
 						junghitex = junghit;
+						junghit = dist;
+						
 					}
-				}
+			    }
 			if (junghit > 0)
 			{
 				GPrediction->FindBestCastPosition(junghit, 130, true, true, false, position, mincount);
