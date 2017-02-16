@@ -1,5 +1,5 @@
 #include "PluginSDK.h"
-#include <string> 
+
 
 PluginSetup("Olaf is Back ");
 
@@ -207,30 +207,6 @@ void Killsteal()
 	}
 }
 
-	if (LaneQ->Enabled() && Player->ManaPercent() > LaneMana->GetInteger() && Q->IsReady())
-	{
-		for (auto minion : GEntityList->GetAllMinions(false, true, false))
-		{
-			if (minion != nullptr && !minion->IsDead() && Player->IsValidTarget(minion, 1000))
-			{
-				lanehit = GetDistance(Player, minion);
-				if (lanehit > lanehitex)
-				{
-					lanehitex = lanehit;
-				}
-			}
-		}
-		if (lanehit > 0)
-		{
-			GPrediction->FindBestCastPosition(lanehit, 130, true, true, false, position, mincount);
-
-			if (mincount >= 2)
-			{
-				Q->CastOnPosition(position);
-			}
-		}
-
-	}
 void LaneClear()
 {
 	Vec3 position;
