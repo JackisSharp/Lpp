@@ -207,23 +207,15 @@ void Killsteal()
 	}
 }
 
-void LaneClear()
-{
-	Vec3 position;
-	int mincount;
-	float lanehit;
-	float lanehitex;
-
 	if (LaneQ->Enabled() && Player->ManaPercent() > LaneMana->GetInteger() && Q->IsReady())
 	{
 		for (auto minion : GEntityList->GetAllMinions(false, true, false))
 		{
 			if (minion != nullptr && !minion->IsDead() && Player->IsValidTarget(minion, 1000))
 			{
-				auto dist = GetDistance(Player, minion);
-				if (dist > lanehitex)
+				lanehit = GetDistance(Player, minion);
+				if (lanehit > lanehitex)
 				{
-					lanehit = dist;
 					lanehitex = lanehit;
 				}
 			}
@@ -239,23 +231,6 @@ void LaneClear()
 		}
 
 	}
-	if (LaneE->Enabled() && E->IsReady())
-	{
-		for (auto minion : GEntityList->GetAllMinions(false, true, false))
-		{
-
-			if (minion != nullptr && !minion->IsDead() && Player->IsValidTarget(minion, E->Range()))
-			{
-				auto dmg = GDamage->GetSpellDamage(Player, minion, kSlotE);
-				if (minion->GetHealth() <= dmg)
-				{
-					E->CastOnUnit(minion);
-				}
-			}
-		}
-		
-	}
-}
 void Jungle()
 {
 	int mincount;
