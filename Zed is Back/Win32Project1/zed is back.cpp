@@ -286,11 +286,11 @@ PLUGIN_EVENT(void) OnRender()
 	
 PLUGIN_EVENT(void) OnCreateObject(IUnit* obj)	
 {
-	if (RShadow!=nullptr && strcmp(obj->GetObjectName(), "Zed_Base_CloneDeath.troy") == 0 && GetDistance(obj, RShadow)<30)
+	if (RShadow!=nullptr && strcmp(obj->GetObjectName(), "Zed_Base_CloneDeath.troy") == 0 && GetDistance(obj, RShadow)<10)
 	{
 		RShadow = nullptr;
 	}
-	if (WShadow != nullptr && strcmp(obj->GetObjectName(), "Zed_Base_CloneDeath.troy") == 0 && GetDistance(obj, WShadow)<30)
+	if (WShadow != nullptr && strcmp(obj->GetObjectName(), "Zed_Base_CloneDeath.troy") == 0 && GetDistance(obj, WShadow)<10)
 	{
 		WShadow = nullptr;
 	}
