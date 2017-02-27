@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Win32Project1", "Win32Project1\Win32Project1.vcxproj", "{90F3E32E-2933-4F75-B8FB-32153EB5D807}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Zed is Back", "Zed is Back\zed is back.vcxproj", "{90F3E32E-2933-4F75-B8FB-32153EB5D807}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
