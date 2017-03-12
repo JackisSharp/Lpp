@@ -9,9 +9,11 @@ IMenu* MainMenu;
 IMenu* ComboMenu;
 IMenuOption* ComboQ;
 IMenuOption* ComboW;
+IMenuOption* ComboWN;
 IMenuOption* ComboE;
 IMenuOption* ComboR;
 IMenuOption* CheckDMG;
+IMenuOption* LineCombo;
 
 
 IMenu* HarassMenu;
@@ -25,6 +27,9 @@ IMenuOption* ItemB;
 IMenuOption* ItemC;
 IMenuOption* ItemY;
 IMenuOption* SumI;
+
+IMenu* MiscZed;
+IMenuOption* AutoE;
 
 
 IMenu* DrawingMenu;
@@ -42,12 +47,14 @@ IUnit* Player;
 IUnit* RShadow;
 IUnit* WShadow;
 Vec3 rpos;
+Vec3 linepos;
 Vec3 wpos;
 IInventoryItem* cutlass;
 IInventoryItem* botrk;
 IInventoryItem* youmuus;
 
-int shadowdelay;
+int Rtimer;
+int Wtimer;
 int delayw=600;
 int LastCastedSpell;
 
@@ -59,10 +66,12 @@ void Menu()
 	{
 
 		ComboQ = ComboMenu->CheckBox("Use Q in Combo", true);
-		ComboW = ComboMenu->CheckBox("Use W in Combo also gap close", true);
+		ComboW = ComboMenu->CheckBox("Use W gap close in Combo", false);
+		ComboWN = ComboMenu->CheckBox("Use W without gap close in Combo", true);
 		ComboE = ComboMenu->CheckBox("Use E in Combo", true);
 		ComboR = ComboMenu->CheckBox("Use R in Combo", true);
 		CheckDMG = ComboMenu->CheckBox("Dont use R if target is killable with Q+E", true);
+		LineCombo = ComboMenu->AddKey("Line Combo", 'T');
 
 	}
 
@@ -81,6 +90,11 @@ void Menu()
 		ItemY = ItemMenu->CheckBox("Use Youmuu's in combo", false);
 		SumI = ItemMenu->CheckBox("Use ignite in combo", true);
 	
+	}
+
+	MiscZed = MainMenu->AddMenu("Misc Menu");
+	{
+		AutoE = MiscZed->CheckBox("Auto E", true);
 	}
 
 
@@ -112,7 +126,7 @@ void LoadSpells()
 	W = GPluginSDK->CreateSpell2(kSlotW, kLineCast, false, false, kCollidesWithNothing);
 	W->SetOverrideRange(680);
 	E = GPluginSDK->CreateSpell2(kSlotE, kCircleCast, false, false, kCollidesWithNothing);
-	E->SetOverrideRange(270);
+	E->SetOverrideRange(290);
 	R = GPluginSDK->CreateSpell2(kSlotR, kTargetCast, false, false, kCollidesWithNothing);
 	R->SetOverrideRange(625);
 
@@ -151,15 +165,15 @@ void CastQ(IUnit* hit)
 }
 void CastW(IUnit* hit)
 {
-	if (delayw >= GGame->TickCount() - shadowdelay)
+	if (delayw >= GGame->TickCount() - Wtimer)
 	{
 		return;
 	}
 		
 	Vec3 herew = hit->ServerPosition().Extend(Player->ServerPosition(), -200);
-	W->CastOnPosition(herew);
-	shadowdelay = GGame->TickCount();	
+	W->CastOnPosition(herew);	
 }
+
 
 void CastE()
 {
@@ -169,8 +183,8 @@ void CastE()
 	}
 	for (auto Enemy : GEntityList->GetAllHeros(false, true))
 	{
-		if (Enemy->IsValidTarget() && !Enemy->IsDead()&& (GetDistance(Player, Enemy)< E->Range()|
-		   ( WShadow!=nullptr&&GetDistance(WShadow, Enemy)<E->Range())| (RShadow != nullptr&&GetDistance(RShadow, Enemy)<E->Range())))
+		if (Enemy->IsValidTarget() && !Enemy->IsDead()&& (GetDistance(Player, Enemy)< E->Range()||
+		   ( WShadow!=nullptr&&GetDistance(WShadow, Enemy)<E->Range())|| (RShadow != nullptr&&GetDistance(RShadow, Enemy)<E->Range())))
 		{
 			E->CastOnPlayer();
 		}
@@ -185,9 +199,9 @@ void Combo()
 	if (target != nullptr && target->IsValidTarget() && !target->IsDead())
 	{
 		auto overkill = GDamage->GetSpellDamage(Player, target, kSlotQ) + GDamage->GetSpellDamage(Player, target, kSlotE);
-		if (ComboR->Enabled()&&R->IsReady()&& RShadow==nullptr&&(!CheckDMG->Enabled()|target->GetHealth() > overkill))
+		if (ComboR->Enabled()&&R->IsReady()&& RShadow==nullptr&&(!CheckDMG->Enabled()||target->GetHealth() > overkill))
 		{
-			if (ComboW->Enabled() && ((GetDistance(Player, target) > 625 && target->MovementSpeed() > Player->MovementSpeed())| GetDistance(Player, target) > 800))
+			if (ComboW->Enabled() && ((GetDistance(Player, target) > 625 && target->MovementSpeed() > Player->MovementSpeed())|| GetDistance(Player, target) > 800))
 			{
 				Vec3 herew = target->ServerPosition().Extend(Player->ServerPosition(), -200);
 				W->CastOnPosition(herew);
@@ -209,10 +223,15 @@ void Combo()
 			{
 				Ignite->CastOnTarget(target);
 			}
-			if(ComboW->Enabled()&& GetDistance(Player, target) > 400 && GetDistance(Player, target) < 1200 && LastCastedSpell!=4)
+			if(ComboW->Enabled()&& W->IsReady()&& GetDistance(Player, target) > 400 && GetDistance(Player, target) < 1200 && LastCastedSpell!=4)
 			{
-				Vec3 herew = target->ServerPosition().Extend(Player->ServerPosition(), -200);
-				W->CastOnPosition(herew);
+				Vec3 herew1 = target->ServerPosition().Extend(Player->ServerPosition(), -200);
+				W->CastOnPosition(herew1);
+			}
+			if (ComboWN->Enabled() && W->IsReady() && GetDistance(Player, target) < 1200 && strcmp(Player->GetSpellName(kSlotW), "ZedW") == 0)
+			{
+				Vec3 herew2 = target->ServerPosition().Extend(Player->ServerPosition(), -200);
+				W->CastOnPosition(herew2);
 			}
 
 			CastE();
@@ -229,7 +248,7 @@ void Combo()
 				youmuus->CastOnPlayer();
 			}
 
-			if (ComboQ->Enabled() && Q->IsReady() &&  ((RShadow != nullptr&&GetDistance(RShadow, target)<850)|GetDistance(Player, target)<850 | 
+			if (ComboQ->Enabled() && Q->IsReady() &&  ((RShadow != nullptr&&GetDistance(RShadow, target)<850)||GetDistance(Player, target)<850 || 
 				(WShadow != nullptr&&GetDistance(WShadow, target)<850)))
 			{
 				CastQ(target);
@@ -239,6 +258,56 @@ void Combo()
 		}
 		
 	}
+}
+
+void TheLine()
+{
+	auto target = GTargetSelector->FindTarget(QuickestKill, PhysicalDamage, 625);
+	if (target==nullptr||GetDistance(Player,target)>300)
+	{
+		GGame->IssueOrder(Player, kMoveTo, GGame->CursorPosition());
+	}
+	else
+	{
+		GOrbwalking->Orbwalk(target, GGame->CursorPosition());
+	}
+
+
+	if (!R->IsReady())
+	{
+		return;
+	}
+	if (RShadow == nullptr&&target != nullptr && !target->IsDead() && target->IsValidTarget())
+	{
+		R->CastOnUnit(target);
+		linepos = target->ServerPosition().Extend(Player->ServerPosition(), -500);
+	}
+	if (target != nullptr && W->IsReady())
+	{
+
+
+		if (ItemC->Enabled() && cutlass->IsOwned() && cutlass->IsReady() && GetDistance(Player, target)<550)
+		{
+			cutlass->CastOnTarget(target);
+		}
+		if (ItemB->Enabled() && botrk->IsOwned() && botrk->IsReady() && GetDistance(Player, target)<550)
+		{
+			botrk->CastOnTarget(target);
+		}
+		if (Ignite != nullptr&& Ignite->IsReady())
+		{
+			Ignite->CastOnTarget(target);
+		}
+		if (strcmp(Player->GetSpellName(kSlotW), "ZedW") == 0)
+		{
+			W->CastOnPosition(linepos);
+		}
+		
+		CastQ(target);
+		CastE();
+
+	}
+
 }
 
 
@@ -252,8 +321,8 @@ void Harass()
 		{
 			CastW(target);
 		}
-		if (HarassQ->Enabled() && Q->IsReady()&& !target->IsDead() && target->IsValidTarget()&&(!W->IsReady()|!HarassW->Enabled()|WShadow!=nullptr)
-			&& (GetDistance(Player, target)<850 |(WShadow != nullptr&&GetDistance(WShadow, target)<850)))
+		if (HarassQ->Enabled() && Q->IsReady()&& !target->IsDead() && target->IsValidTarget()&&(!W->IsReady()||!HarassW->Enabled()||WShadow!=nullptr)
+			&& (GetDistance(Player, target)<850 ||(WShadow != nullptr&&GetDistance(WShadow, target)<850)))
 		{
 			CastQ(target);
 
@@ -286,14 +355,7 @@ PLUGIN_EVENT(void) OnRender()
 	
 PLUGIN_EVENT(void) OnCreateObject(IUnit* obj)	
 {
-	if (RShadow!=nullptr && strcmp(obj->GetObjectName(), "Zed_Base_CloneDeath.troy") == 0 && GetDistance(obj, RShadow)<10)
-	{
-		RShadow = nullptr;
-	}
-	if (WShadow != nullptr && strcmp(obj->GetObjectName(), "Zed_Base_CloneDeath.troy") == 0 && GetDistance(obj, WShadow)<10)
-	{
-		WShadow = nullptr;
-	}
+
 		
 }
 	
@@ -305,17 +367,28 @@ PLUGIN_EVENT(void) OnSpellCast(CastedSpell const& Args)
 		{
 			LastCastedSpell = 1;
 		}
-		if ((strcmp(Args.Name_, "ZedW") == 0)| (strcmp(Args.Name_, "ZedW2") == 0))
+		if (strcmp(Args.Name_, "ZedW") == 0)
 		{
+			Wtimer= GGame->TickCount();
 			LastCastedSpell = 2;
+		}
+		if (strcmp(Args.Name_, "ZedW2") == 0)
+		{	
+			LastCastedSpell = 3;
 		}
 		if (strcmp(Args.Name_, "ZedE") == 0)
 		{
-			LastCastedSpell = 3;
+			LastCastedSpell = 6;
 		}
-		if ((strcmp(Args.Name_, "ZedR") == 0 )| (strcmp(Args.Name_, "ZedR2") == 0))
+		if (strcmp(Args.Name_, "ZedR") == 0 )
 		{
+			Rtimer = GGame->TickCount();
 			LastCastedSpell = 4;		
+		}
+		if (strcmp(Args.Name_, "ZedR2") == 0)
+		{
+			
+			LastCastedSpell = 5;
 		}
 		
 
@@ -345,8 +418,25 @@ PLUGIN_EVENT(void) OnGameUpdate()
 	{
 		Harass();
 	}
-	if (LastCastedSpell == 2)
+	if (AutoE->Enabled())
 	{
+		CastE();
+	}
+	if (GetAsyncKeyState(LineCombo->GetInteger()))
+	{
+		TheLine();
+	}
+	if (GGame->TickCount() > Wtimer + 4750)
+	{
+		WShadow = nullptr;
+	}
+	if (GGame->TickCount() > Rtimer + 7550)
+	{
+		RShadow = nullptr;
+	}
+	if (LastCastedSpell != 4 && LastCastedSpell !=5 )
+	{
+
 		
 		for (auto unit : GEntityList->GetAllMinions(true, false, false))
 		{
@@ -354,7 +444,6 @@ PLUGIN_EVENT(void) OnGameUpdate()
 			{
 				wpos = unit->ServerPosition();
 				WShadow = unit;
-				
 				return;
 
 			}
@@ -362,8 +451,9 @@ PLUGIN_EVENT(void) OnGameUpdate()
 		}
 		
 	}
-	if (LastCastedSpell == 4)
+	if (LastCastedSpell == 4 || LastCastedSpell == 5)
 	{
+
 
 		for (auto unit : GEntityList->GetAllMinions(true, false, false))
 		{
@@ -409,3 +499,4 @@ PLUGIN_API void OnUnload()
 	GEventManager->RemoveEventHandler(kEventOnSpellCast, OnSpellCast);
 
 }
+
