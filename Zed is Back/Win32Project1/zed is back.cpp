@@ -152,15 +152,7 @@ void LoadSpells()
 
 void CastQ(IUnit* hit)
 {
-	auto time = 0.25f + GetDistance(Player, hit) / 1600;
-	Vec3 futurePos;
-	GPrediction->GetFutureUnitPosition(hit, time, true, futurePos);
-	Vec2 hitpos = futurePos.To2D().Extend(Player->GetPosition().To2D(), -20);
-	Vec3 Hithere;
-	Hithere.x = hitpos.x;
-	Hithere.y = futurePos.y;
-	Hithere.z = hitpos.y;
-	Q->CastOnPosition(Hithere);
+	Q->CastOnTarget(hit, kHitChanceMedium);
 
 }
 void CastW(IUnit* hit)
@@ -438,9 +430,10 @@ PLUGIN_EVENT(void) OnGameUpdate()
 	{
 
 		
-		for (auto unit : GEntityList->GetAllMinions(true, false, false))
+		for (auto unit : GEntityList->GetAllUnits())
 		{
-			if (unit != nullptr && strcmp(unit->GetObjectName(), "Shadow") == 0 && !unit->IsDead()&&unit->IsVisible() && unit != RShadow)
+
+			if (unit != nullptr && strcmp(unit->GetObjectName(), "Shadow") == 0 && !unit->IsDead() && unit->IsVisible() && unit != RShadow&&!unit->IsEnemy(Player))
 			{
 				wpos = unit->ServerPosition();
 				WShadow = unit;
@@ -455,9 +448,9 @@ PLUGIN_EVENT(void) OnGameUpdate()
 	{
 
 
-		for (auto unit : GEntityList->GetAllMinions(true, false, false))
+		for (auto unit : GEntityList->GetAllUnits())
 		{
-			if (unit != nullptr && strcmp(unit->GetObjectName(), "Shadow") == 0 && !unit->IsDead()&&unit->IsVisible()&&unit!=WShadow)
+			if (unit != nullptr && strcmp(unit->GetObjectName(), "Shadow") == 0 && !unit->IsDead()&&unit->IsVisible()&&unit!=WShadow && !unit->IsEnemy(Player))
 			{
 				rpos = unit->ServerPosition();
 				RShadow = unit;
